@@ -6,11 +6,7 @@ export const metadata: Metadata = {
   description: "JB Squeaky Cleaners LLC — Coming Soon",
   applicationName: "JB Squeaky Cleaners",
   icons: {
-    icon: [
-      { url: "/branding/favicon.ico" },
-      { url: "/branding/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/branding/favicon-32.png", sizes: "32x32", type: "image/png" },
-    ],
+    // Next.js generates the versioned browser icon link from app/favicon.ico.
     apple: {
       url: "/branding/apple-touch-icon.png",
       sizes: "180x180",
