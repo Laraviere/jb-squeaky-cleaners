@@ -15,7 +15,7 @@ export function Header() {
     <header className="site-header">
       <div className="container header-inner">
         <Link href="/" className="logo-link" aria-label="JB Squeaky Cleaners home" onClick={() => setOpen(false)}>
-          <Image src="/branding/jb-squeaky-logo.JPG" alt="JB Squeaky Cleaners LLC" width={1170} height={660} sizes="150px" loading="eager" className="site-logo" />
+          <Image src="/branding/jb-squeaky-header-logo.png" alt="JB Squeaky Cleaners LLC" width={1916} height={821} sizes="(max-width: 420px) 170px, (max-width: 900px) 180px, (max-width: 1100px) 200px, 220px" loading="eager" className="site-logo" />
         </Link>
         <button className="menu-toggle" aria-controls="site-navigation" aria-expanded={open} onClick={() => setOpen(!open)}>
           <span>{open ? "Close" : "Menu"}</span><span className="menu-lines" aria-hidden="true">{open ? "×" : "☰"}</span>
