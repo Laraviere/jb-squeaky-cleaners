@@ -1,26 +1,22 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Icon } from "@/components/icon";
+import { Photo, QuoteLink, ContactBanner } from "@/components/sections";
+import { business, photos } from "@/lib/site";
 
 export default function Home() {
-  return (
-    <main className="coming-soon">
-      <div className="brand-lockup">
-        <div className="logo-frame">
-          <Image
-            className="brand-logo"
-            src="/branding/jb-squeaky-logo.JPG"
-            alt="JB Squeaky Cleaners LLC"
-            width={1170}
-            height={660}
-            sizes="(max-width: 640px) 90vw, 640px"
-            loading="eager"
-            fetchPriority="high"
-          />
-        </div>
-        <div className="launch-status">
-          <span className="brand-rule" aria-hidden="true" />
-          <h1>COMING SOON</h1>
-        </div>
-      </div>
-    </main>
-  );
+  return <>
+    <section className="home-hero"><div className="container hero-grid">
+      <div className="hero-copy"><span className="eyebrow"><span />A local clean. A fresh start.</span><h1>A cleaner space.<br />A <em>lighter</em> day.</h1><p>From the home you love to the space where you work, we help make clean a little easier.</p><p className="hero-area">Residential & commercial cleaning across Southwest Virginia and Northwest North Carolina.</p><div className="hero-actions"><QuoteLink /><a href={business.phoneHref} className="text-link">Let’s talk <Icon name="arrow" /></a></div><div className="hero-reassurance"><span><Icon name="check" />Locally owned</span><span><Icon name="check" />Insured</span></div></div>
+      <div className="hero-visual"><Photo src={photos.living} alt="Finished living room with clean wood flooring and a view into the kitchen" eager /><div className="photo-caption"><span className="caption-dot" /><span>A fresh perspective.<br /><strong>Real spaces. Our work.</strong></span><Link href="/gallery" aria-label="See our work in the gallery"><Icon name="arrow" /></Link></div><div className="hero-photo-tag"><Icon name="sparkle" /><span>Homes &<br />workspaces</span></div></div>
+    </div></section>
+    <div className="service-strip"><div className="container"><span>One-time & recurring plans</span><span>Residential & commercial</span><span>Deep & heavy-duty capabilities</span></div></div>
+    <section className="section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Cleaning that fits your life</span><h2>A fresh start for<br />every kind of space.</h2></div><p>A regular reset or a bigger project. Start with what your space needs, and we’ll talk through a plan.</p></div>
+      <div className="service-cards"><Link href="/residential" className="service-card"><div className="card-photo"><Photo src={photos.kitchen} alt="Clean kitchen with wood cabinets, clear counters, and finished floors" /><span className="photo-index">01 / AT HOME</span></div><div className="service-card-body"><span className="service-icon"><Icon name="house" /></span><h3>Residential cleaning</h3><p>More room to enjoy your home. One-time visits and recurring plans for your everyday spaces.</p><span className="card-link">Explore residential <Icon name="arrow" /></span></div></Link>
+      <Link href="/commercial" className="service-card service-card-navy"><div className="commercial-art" aria-hidden="true"><Icon name="building" /><div className="art-line" /><span>SPACE TO<br />DO YOUR BEST WORK.</span></div><div className="service-card-body"><span className="service-icon"><Icon name="building" /></span><h3>Commercial cleaning</h3><p>A cleaning plan built around your workspace, your priorities, and your schedule.</p><span className="card-link">Explore commercial <Icon name="arrow" /></span></div></Link></div>
+    </div></section>
+    <section className="section soft-section"><div className="container detail-grid"><div className="detail-photo"><Photo src={photos.oven} alt="Clean oven interior with racks and glass door" /><span className="image-note">THE DETAILS MAKE A DIFFERENCE</span></div><div className="detail-copy"><span className="eyebrow"><span />Beyond the everyday</span><h2>Some spaces need<br />a deeper clean.</h2><p>When regular cleaning isn’t enough, let’s talk about deep or heavy-duty cleaning. Share the condition of the space and the details you’d like us to focus on.</p><p>From kitchen buildup to a larger reset, a clear conversation helps us understand the work ahead.</p><QuoteLink>Talk about your project</QuoteLink></div></div></section>
+    <section className="section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />A simple place to start</span><h2>Let’s work out<br />what clean looks like.</h2></div><Link href="/about" className="text-link">Meet JB Squeaky <Icon name="arrow" /></Link></div><div className="steps-grid">{[{ title: "Tell us about your space", text: "Home or business, location, size, and the areas that need attention." }, { title: "Share your priorities", text: "A one-time clean, recurring visits, or a more involved cleaning project." }, { title: "Discuss your plan", text: "We’ll talk through the scope and timing so you can decide what works for you." }].map((step,i)=><div className="step" key={step.title}><span className="step-number">0{i+1}</span><h3>{step.title}</h3><p>{step.text}</p></div>)}</div></div></section>
+    <section className="area-section"><div className="container area-grid"><div><span className="eyebrow"><span />Close to home</span><h2>Two states.<br />One local team.</h2></div><div><p>Serving homes and businesses in Southwest Virginia and Northwest North Carolina.</p><p className="muted">Tell us your town or ZIP code when you request a quote so we can discuss service at your location.</p><QuoteLink className="button-outline" /></div></div></section>
+    <ContactBanner />
+  </>;
 }

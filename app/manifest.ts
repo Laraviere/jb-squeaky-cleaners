@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "JB Squeaky Cleaners",
     short_name: "JB Squeaky",
-    description: "JB Squeaky Cleaners LLC — Coming Soon",
+    description: "Residential and commercial cleaning in Southwest Virginia and Northwest North Carolina.",
     id: "/",
     start_url: "/",
     scope: "/",
