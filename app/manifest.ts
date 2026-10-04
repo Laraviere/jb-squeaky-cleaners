@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
+import { serviceAreas } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "JB Squeaky Cleaners",
     short_name: "JB Squeaky",
-    description: "Residential and commercial cleaning in Southwest Virginia and Northwest North Carolina.",
+    description: serviceAreas.description,
     id: "/",
     start_url: "/",
     scope: "/",

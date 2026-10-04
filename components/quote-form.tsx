@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { submitQuote } from "@/app/request-a-quote/actions";
 import { frequencies, serviceTypes, type QuoteField, type QuoteRequest, type QuoteState } from "@/lib/quote";
-import { business } from "@/lib/site";
+import { business, serviceAreas } from "@/lib/site";
 import { Icon } from "./icon";
 
 const initial: QuoteState = { status: "idle", message: "" };
@@ -26,7 +26,7 @@ export function QuoteForm({ configured }: { configured: boolean }) {
       <div className="field field-full"><label htmlFor="email">Email address</label><input {...fieldProps("email")} type="email" autoComplete="email" maxLength={254} placeholder="you@example.com" />{error("email")}</div>
       <div className="field"><label htmlFor="service_type">Service type</label><select {...fieldProps("service_type")}><option value="">Choose a service</option>{serviceTypes.map(x=><option key={x}>{x}</option>)}</select>{error("service_type")}</div>
       <div className="field"><label htmlFor="frequency">Cleaning frequency</label><select {...fieldProps("frequency")}><option value="">Choose a frequency</option>{frequencies.map(x=><option key={x}>{x}</option>)}</select>{error("frequency")}</div>
-      <div className="field field-full"><label htmlFor="location">Property location</label><input {...fieldProps("location")} maxLength={200} placeholder="Town / city and ZIP code" />{error("location")}</div>
+      <div className="field field-full"><label htmlFor="location">Property location</label><input {...fieldProps("location")} maxLength={200} placeholder="Town / city, state, and ZIP code" aria-describedby={state.errors?.location ? "location-area-note location-error" : "location-area-note"} /><p id="location-area-note">Residential: {serviceAreas.residential}. Commercial: {serviceAreas.commercial}.</p>{error("location")}</div>
       <div className="field"><label htmlFor="property_size">Approximate property size</label><input {...fieldProps("property_size")} maxLength={100} placeholder="Square feet, rooms, or not sure" />{error("property_size")}</div>
       <div className="field"><label htmlFor="preferred_timing">Preferred timing</label><input {...fieldProps("preferred_timing")} maxLength={200} placeholder="Preferred date, schedule, or flexible" />{error("preferred_timing")}</div>
       <div className="field field-full"><label htmlFor="details">Cleaning details</label><textarea {...fieldProps("details")} rows={5} maxLength={4000} placeholder="Tell us about the space, its current condition, and the areas you’d like us to focus on." />{error("details")}</div>

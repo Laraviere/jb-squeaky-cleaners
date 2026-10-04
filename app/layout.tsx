@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { serviceAreas } from "@/lib/site";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "JB Squeaky Cleaners | Residential & Commercial Cleaning", template: "%s | JB Squeaky Cleaners" },
-  description: "Locally owned and insured residential and commercial cleaning in Southwest Virginia and Northwest North Carolina. One-time and recurring plans. Request a quote.",
+  description: `Locally owned and insured. ${serviceAreas.description} One-time and recurring plans. Request a quote.`,
   applicationName: "JB Squeaky Cleaners",
   icons: { apple: { url: "/branding/apple-touch-icon.png", sizes: "180x180", type: "image/png" } },
 };

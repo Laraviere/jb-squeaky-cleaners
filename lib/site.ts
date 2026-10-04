@@ -3,7 +3,7 @@ export const business = {
   phone: "(276) 235-2889",
   phoneHref: "tel:+12762352889",
   email: "sales@jbsqueakycleaners.com",
-  area: "Southwest Virginia & Northwest North Carolina",
+  area: "Residential: Southwest VA & Northwest NC · Commercial: all VA & NC",
 };
 
 export const navigation = [
@@ -25,4 +25,10 @@ export const photos = {
   bedroomEntry: "/images/jb-squeaky-bedroom-before-entry-view.jpeg",
   crew: "/images/jb-squeaky-cleaning-crew-selfie.jpeg",
   crewWorking: "/images/jb-squeaky-cleaning-crew-protective-suits.jpeg",
+};
+
+export const serviceAreas = {
+  residential: "Serving Southwest Virginia & Northwest North Carolina",
+  commercial: "Serving all of Virginia & North Carolina",
+  description: "Residential cleaning in Southwest Virginia & Northwest North Carolina. Commercial cleaning serving all of Virginia & North Carolina.",
 };
