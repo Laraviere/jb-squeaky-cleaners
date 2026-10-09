@@ -16,8 +16,9 @@ export const navigation = [
   { href: "/", label: "Home" },
   { href: "/residential", label: "Residential" },
   { href: "/commercial", label: "Commercial" },
-  { href: "/about", label: "About" },
+  { href: "/careers", label: "Careers" },
   { href: "/gallery", label: "Gallery" },
+  { href: "/about", label: "About" },
 ];
 
 export const photos = {
