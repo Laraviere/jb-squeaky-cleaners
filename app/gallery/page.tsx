@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
-import { PageIntro, Photo, ContactBanner } from "@/components/sections";
-import { photos } from "@/lib/site";
+import { PageIntro, ContactBanner } from "@/components/sections";
+import { ProjectCard } from "@/components/gallery";
+import { gallerySections } from "@/lib/gallery";
 
-export const metadata: Metadata = { title: "Our Work", description: "View real cleaning project photos from JB Squeaky Cleaners: a kitchen before and after, finished rooms, oven cleaning, and our team at work." };
+export const metadata: Metadata = { title: "Our Work", description: "Explore real residential and commercial cleaning photos from JB Squeaky Cleaners, including finished spaces, a kitchen before and after, and our team at work." };
 
 export default function Gallery() {
-  return <><PageIntro eyebrow="Our work" title="Real spaces. A fresh perspective."><p>A look at the work, from a project’s starting point to finished rooms and the smaller details.</p></PageIntro>
-    <section className="section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Before & after</span><h2>A kitchen reset.</h2></div><p>Two views of the same kitchen. Every space has a starting point; these photos show the change without judgment.</p></div><div className="comparison-grid"><figure><Photo src={photos.kitchenBefore} alt="Kitchen before cleaning, with items on the counters and floor" eager /><figcaption><span>BEFORE</span>The starting point</figcaption></figure><figure><Photo src={photos.kitchen} alt="The same kitchen after cleaning, with cleared counters and clean floors" eager /><figcaption><span>AFTER</span>A clearer, cleaner space</figcaption></figure></div></div></section>
-    <section className="section soft-section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Finished spaces & details</span><h2>Room to appreciate<br />the difference.</h2></div><p>Finished living spaces, an oven interior, and a bathroom view from our project photos.</p></div><div className="gallery-grid">{[{src:photos.living,alt:"Finished living room looking toward the kitchen",caption:"Living room & kitchen"},{src:photos.floor,alt:"Clean wood flooring in the living room",caption:"A closer look at the floors"},{src:photos.oven,alt:"Oven interior and door after cleaning",caption:"Inside the oven"},{src:photos.bathroom,alt:"Bathroom with tub, toilet, and tiled floor",caption:"Bathroom project view"}].map(p=><figure key={p.src}><Photo src={p.src} alt={p.alt} /><figcaption>{p.caption}</figcaption></figure>)}</div></div></section>
-    <section className="section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Understanding the scope</span><h2>Every project starts<br />somewhere.</h2></div><p>Two starting views from a bedroom project. These are before photos; there is no matching finished-bedroom photo in this collection.</p></div><div className="comparison-grid bedroom-views"><figure><Photo src={photos.bedroomBed} alt="Bedroom project before cleaning, viewed toward the bed with belongings throughout the room" /><figcaption><span>BEFORE</span>View toward the bed</figcaption></figure><figure><Photo src={photos.bedroomEntry} alt="The same bedroom before cleaning, viewed from the entry" /><figcaption><span>BEFORE</span>View from the entry</figcaption></figure></div></div></section>
-    <section className="section soft-section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Behind the scenes</span><h2>Our team at work.</h2></div><p>The people behind the cleaning, photographed during a project.</p></div><div className="comparison-grid crew-gallery"><figure><Photo src={photos.crew} alt="Two JB Squeaky crew members smiling during a cleaning project" /><figcaption>The crew behind the clean</figcaption></figure><figure><Photo src={photos.crewWorking} alt="Crew members in protective clothing working inside a home" /><figcaption>A hands-on cleaning project</figcaption></figure></div></div></section><ContactBanner /></>;
+  return <>
+    <PageIntro eyebrow="Our work" title="Real spaces. A fresh perspective."><p>A look at our residential and commercial work, from finished rooms to the details that make a difference.</p></PageIntro>
+    <div className="container gallery-navigation"><nav aria-label="Gallery categories">{gallerySections.map(section => <a key={section.id} href={`#${section.id}`}>{section.id === "before-after" ? "Before & after" : section.title}</a>)}</nav></div>
+    {gallerySections.map((section, index) => <section id={section.id} key={section.id} className={`section gallery-section${index % 2 ? " soft-section" : ""}`} aria-labelledby={`${section.id}-title`}>
+      <div className="container">
+        <div className="section-heading"><div><span className="eyebrow"><span />{section.layout === "pair" ? "A closer look" : "Real cleaning projects"}</span><h2 id={`${section.id}-title`}>{section.title}</h2></div><p>{section.description}</p></div>
+        <div className={section.layout === "pair" ? "project-pair" : "project-grid"}>{section.photos.map((photo, photoIndex) => <ProjectCard key={photo.id} photo={photo} label={section.labels?.[photoIndex]} pair={section.layout === "pair"} />)}</div>
+      </div>
+    </section>)}
+    <ContactBanner />
+  </>;
 }

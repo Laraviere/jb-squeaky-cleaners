@@ -1,7 +1,13 @@
+const phoneNumbers = [
+  { label: "Primary", number: "(276) 235-2889", href: "tel:+12762352889" },
+  { label: "Secondary", number: "(276) 235-2887", href: "tel:+12762352887" },
+] as const;
+
 export const business = {
   name: "JB Squeaky Cleaners",
-  phone: "(276) 235-2889",
-  phoneHref: "tel:+12762352889",
+  phone: phoneNumbers[0].number,
+  phoneHref: phoneNumbers[0].href,
+  phones: phoneNumbers,
   email: "sales@jbsqueakycleaners.com",
   area: "Residential: Southwest VA & Northwest NC · Commercial: all VA & NC",
 };

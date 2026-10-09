@@ -1,22 +1,39 @@
 import Link from "next/link";
+import { ClientShowcase } from "@/components/clients";
 import { Icon } from "@/components/icon";
-import { Photo, QuoteLink, ContactBanner } from "@/components/sections";
+import { Photo, QuoteLink } from "@/components/sections";
+import { ProjectPhoto } from "@/components/gallery";
+import { galleryPhotos } from "@/lib/gallery";
+import Image from "next/image";
+import { homepageContent } from "@/lib/home";
+import { CustomerReviews } from "@/components/reviews";
 import { business, photos, serviceAreas } from "@/lib/site";
 
 export default function Home() {
-  return <>
-    <section className="home-hero"><div className="container hero-grid">
-      <div className="hero-copy"><span className="eyebrow"><span />A local clean. A fresh start.</span><h1>A cleaner space.<br />A <em>lighter</em> day.</h1><p>From the home you love to the space where you work, we help make clean a little easier.</p><p className="hero-area">Residential cleaning: {serviceAreas.residential}.<br />Commercial cleaning: {serviceAreas.commercial}.</p><div className="hero-actions"><QuoteLink /><a href={business.phoneHref} className="text-link">Let’s talk <Icon name="arrow" /></a></div><div className="hero-reassurance"><span><Icon name="check" />Locally owned</span><span><Icon name="check" />Insured</span></div></div>
-      <div className="hero-visual"><Photo src={photos.living} alt="Finished living room with clean wood flooring and a view into the kitchen" eager /><div className="photo-caption"><span className="caption-dot" /><span>A fresh perspective.<br /><strong>Real spaces. Our work.</strong></span><Link href="/gallery" aria-label="See our work in the gallery"><Icon name="arrow" /></Link></div><div className="hero-photo-tag"><Icon name="sparkle" /><span>Homes &<br />workspaces</span></div></div>
-    </div></section>
-    <div className="service-strip"><div className="container"><span>One-time & recurring plans</span><span>Residential & commercial</span><span>Deep & heavy-duty capabilities</span></div></div>
-    <section className="section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Cleaning that fits your life</span><h2>A fresh start for<br />every kind of space.</h2></div><p>A regular reset or a bigger project. Start with what your space needs, and we’ll talk through a plan.</p></div>
+  const { hero, results } = homepageContent;
+  return <div className="premium-home">
+    <section className="premium-hero" aria-labelledby="hero-heading">
+      <Image src={hero.photo.src} alt={hero.photo.alt} width={hero.photo.width} height={hero.photo.height} sizes="100vw" preload className="premium-hero-photo" />
+      <div className="premium-hero-shade" aria-hidden="true" />
+      <div className="container premium-hero-content">
+        <span className="eyebrow light"><span />JB Squeaky Cleaners LLC</span>
+        <h1 id="hero-heading">{hero.headline[0]}<br /><span>{hero.headline[1]}</span></h1>
+        <p className="premium-hero-intro">Residential and commercial cleaning, with care for the spaces where you live and work.</p>
+        <div className="premium-service-areas"><p><strong>Residential Cleaning</strong>{serviceAreas.residential}</p><p><strong>Commercial Cleaning</strong>{serviceAreas.commercial}</p></div>
+        <div className="premium-hero-actions"><QuoteLink /><Link href="#our-services" className="button premium-secondary">Our Services <Icon name="arrow" /></Link></div>
+        <ul className="premium-highlights">{["Locally Owned", "Insured", "Recurring Plans"].map(highlight => <li key={highlight}><Icon name="check" />{highlight}</li>)}</ul>
+      </div>
+    </section>
+    <section id="our-services" className="section home-services"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />Cleaning that fits your life</span><h2>A fresh start for<br />every kind of space.</h2></div><p>One-time visits, recurring plans, or a bigger reset. Tell us your town or ZIP code and what your space needs, and we’ll talk through a plan.</p></div>
       <div className="service-cards"><Link href="/residential" className="service-card"><div className="card-photo"><Photo src={photos.kitchen} alt="Clean kitchen with wood cabinets, clear counters, and finished floors" /><span className="photo-index">01 / AT HOME</span></div><div className="service-card-body"><span className="service-icon"><Icon name="house" /></span><h3>Residential cleaning</h3><p>More room to enjoy your home. One-time visits and recurring plans for your everyday spaces.</p><p>{serviceAreas.residential}</p><span className="card-link">Explore residential <Icon name="arrow" /></span></div></Link>
-      <Link href="/commercial" className="service-card service-card-navy"><div className="commercial-art" aria-hidden="true"><Icon name="building" /><div className="art-line" /><span>SPACE TO<br />DO YOUR BEST WORK.</span></div><div className="service-card-body"><span className="service-icon"><Icon name="building" /></span><h3>Commercial cleaning</h3><p>A cleaning plan built around your workspace, your priorities, and your schedule.</p><p>{serviceAreas.commercial}</p><span className="card-link">Explore commercial <Icon name="arrow" /></span></div></Link></div>
+      <Link href="/commercial" className="service-card service-card-navy"><div className="card-photo"><ProjectPhoto photo={galleryPhotos.exit} sizes="(max-width: 700px) calc(100vw - 40px), (max-width: 1100px) calc((100vw - 72px) / 2), 270px" /></div><div className="service-card-body"><span className="service-icon"><Icon name="building" /></span><h3>Commercial cleaning</h3><p>A cleaning plan built around your workspace, your priorities, and your schedule.</p><p>{serviceAreas.commercial}</p><span className="card-link">Explore commercial <Icon name="arrow" /></span></div></Link></div>
     </div></section>
-    <section className="section soft-section"><div className="container detail-grid"><div className="detail-photo"><Photo src={photos.oven} alt="Clean oven interior with racks and glass door" /><span className="image-note">THE DETAILS MAKE A DIFFERENCE</span></div><div className="detail-copy"><span className="eyebrow"><span />Beyond the everyday</span><h2>Some spaces need<br />a deeper clean.</h2><p>When regular cleaning isn’t enough, let’s talk about deep or heavy-duty cleaning. Share the condition of the space and the details you’d like us to focus on.</p><p>From kitchen buildup to a larger reset, a clear conversation helps us understand the work ahead.</p><QuoteLink>Talk about your project</QuoteLink></div></div></section>
-    <section className="section"><div className="container"><div className="section-heading"><div><span className="eyebrow"><span />A simple place to start</span><h2>Let’s work out<br />what clean looks like.</h2></div><Link href="/about" className="text-link">Meet JB Squeaky <Icon name="arrow" /></Link></div><div className="steps-grid">{[{ title: "Tell us about your space", text: "Home or business, location, size, and the areas that need attention." }, { title: "Share your priorities", text: "A one-time clean, recurring visits, or a more involved cleaning project." }, { title: "Discuss your plan", text: "We’ll talk through the scope and timing so you can decide what works for you." }].map((step,i)=><div className="step" key={step.title}><span className="step-number">0{i+1}</span><h3>{step.title}</h3><p>{step.text}</p></div>)}</div></div></section>
-    <section className="area-section"><div className="container area-grid"><div><span className="eyebrow"><span />Close to home</span><h2>Two states.<br />One local team.</h2></div><div><p><strong>Residential Cleaning</strong><br />{serviceAreas.residential}</p><p><strong>Commercial Cleaning</strong><br />{serviceAreas.commercial}</p><p className="muted">Tell us your town or ZIP code when you request a quote so we can discuss service at your location.</p><QuoteLink className="button-outline" /></div></div></section>
-    <ContactBanner />
-  </>;
+    <section className="section home-results" aria-labelledby="results-heading"><div className="container home-results-grid">
+      <div className="home-results-copy"><span className="eyebrow"><span />Real spaces. Real change.</span><h2 id="results-heading">More Than Clean.<br />A Noticeable Difference.</h2><p>A closer look at the same kitchen, before and after cleaning. A clear view of the difference, without judgment about where it started.</p><p>Some spaces need more than an everyday reset. Deep and detailed cleaning can focus on kitchen buildup, overlooked surfaces, and the areas that need extra attention. We also offer heavy-duty cleaning; share the condition of your space so we can discuss the right scope.</p><Link href="/gallery" className="button">View Our Work <Icon name="arrow" /></Link></div>
+      <div className="home-results-photos">{[{photo:results.before,label:"Before"},{photo:results.after,label:"After"}].map(({photo,label}) => <figure key={photo.id}><ProjectPhoto photo={photo} sizes="(max-width: 700px) calc(100vw - 40px), (max-width: 1000px) calc((100vw - 72px) / 2), 330px" /><figcaption className={`home-result-label${label === "After" ? " is-after" : ""}`}>{label}</figcaption></figure>)}</div>
+    </div></section>
+    <ClientShowcase />
+    <CustomerReviews />
+    <section className="section home-final-cta" aria-labelledby="final-cta-heading"><div className="container home-final-inner"><div><span className="eyebrow light"><span />Let’s make room for clean</span><h2 id="final-cta-heading">Ready for a cleaner,<br />healthier space?</h2><p>Tell us about your home or business. We’ll discuss your priorities, the scope, and a cleaning plan that works for you.</p></div><div className="home-final-actions"><QuoteLink /><a href={business.phoneHref}>Call {business.phone}</a><a href={`mailto:${business.email}`}>{business.email}</a></div></div></section>
+  </div>;
 }
