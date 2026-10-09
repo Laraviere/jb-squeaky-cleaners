@@ -191,8 +191,9 @@ h3 { font-size: 1.4rem; line-height: 1.3; letter-spacing: -.025em; font-weight: 
 .gallery-grid .photo { aspect-ratio: 3 / 4; object-fit: contain; }
 .gallery-grid figcaption { padding: 1.1rem; font-size: .8rem; color: var(--ink); }
 .crew-gallery { max-width: 850px; }
-.quote-layout { display: grid; grid-template-columns: .8fr 1.5fr; gap: 5rem; align-items: start; }
-.quote-sidebar { padding-top: .5rem; }
+.quote-layout { display: grid; grid-template-columns: .8fr 1.5fr; grid-template-areas: "contact form"; gap: 5rem; align-items: start; }
+.quote-primary { grid-area: form; min-width: 0; }
+.quote-sidebar { grid-area: contact; padding-top: .5rem; }
 .quote-sidebar h2 { font-size: 2rem; margin: 0 0 1.3rem; }
 .quote-sidebar > p { font-size: .92rem; margin: 0 0 2rem; }
 .contact-block { margin-block: 1.7rem; }
@@ -214,6 +215,7 @@ h3 { font-size: 1.4rem; line-height: 1.3; letter-spacing: -.025em; font-weight: 
 .field { min-width: 0; display: flex; flex-direction: column; gap: .6rem; }
 .field-full { grid-column: 1 / -1; }
 .field label { font-size: .8rem; font-weight: 700; color: var(--navy); }
+.field > p { margin: 0; font-size: .85rem; line-height: 1.6; }
 .field input, .field select, .field textarea { width: 100%; min-width: 0; border: 1px solid #bac9c4; background: white; border-radius: 4px; padding: .9rem; color: var(--navy); font-size: .93rem; min-height: 48px; }
 .field textarea { resize: vertical; line-height: 1.6; }
 .field input::placeholder, .field textarea::placeholder { color: #657575; opacity: 1; }
@@ -262,7 +264,13 @@ h3 { font-size: 1.4rem; line-height: 1.3; letter-spacing: -.025em; font-weight: 
   .hero-actions { gap: 1rem; }
   .section-heading > p { max-width: 310px; }
   .gallery-grid { grid-template-columns: 1fr 1fr; }
-  .quote-layout { grid-template-columns: 1fr; gap: 2.5rem; }
+  .quote-page .page-intro { padding-block: 2rem; }
+  .quote-page .page-intro h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 1rem; }
+  .quote-page .quote-section { padding-block: 2rem 3.5rem; }
+  .quote-layout { grid-template-columns: 1fr; grid-template-areas: "form" "contact"; gap: 2.5rem; }
+  .field label { font-size: .875rem; }
+  .field input, .field select, .field textarea { font-size: 1rem; min-height: 52px; }
+  .quote-form { scroll-margin-top: 110px; }
   .quote-sidebar { max-width: 600px; }
   .quote-sidebar .contact-block { display: inline-block; margin-right: 2rem; vertical-align: top; }
   .quote-sidebar .sidebar-note { margin-top: 1rem; }
@@ -286,9 +294,9 @@ h3 { font-size: 1.4rem; line-height: 1.3; letter-spacing: -.025em; font-weight: 
   .section-heading { display: block; margin-bottom: 2rem; }
   .section-heading > p, .section-heading > a { max-width: 100%; margin-top: 1.25rem; }
   .service-cards { grid-template-columns: 1fr; gap: 1.5rem; }
-  .service-card { grid-template-columns: .8fr 1fr; }
-  .card-photo .photo { height: 100%; object-fit: cover; }
-  .commercial-art { padding: 1.2rem; }
+  .service-card { grid-template-columns: 1fr; }
+  .card-photo .photo { height: clamp(220px, 55vw, 300px); object-fit: cover; }
+  .commercial-art { min-height: 180px; padding: 1.5rem; }
   .service-card-body { padding: 1.5rem; }
   .service-card h3 { font-size: 1.2rem; }
   .detail-grid.reverse .detail-photo { order: 0; }
@@ -319,6 +327,10 @@ h3 { font-size: 1.4rem; line-height: 1.3; letter-spacing: -.025em; font-weight: 
   .comparison-grid figcaption { display: grid; gap: .65rem; padding: .9rem; font-size: .78rem; }
   .comparison-grid figcaption span { width: fit-content; }
   .quote-form { padding: 1.5rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-submit .button { width: 100%; }
+  .quote-page .page-intro { padding-block: 1.5rem; }
+  .quote-page .quote-section { padding-top: 1.5rem; }
   .quote-sidebar .contact-block { display: block; }
 }
 @media (max-width: 420px) {
@@ -328,19 +340,16 @@ h3 { font-size: 1.4rem; line-height: 1.3; letter-spacing: -.025em; font-weight: 
   .hero-actions { align-items: flex-start; gap: .7rem; }
   .hero-actions .text-link { padding-inline: .25rem; }
   .eyebrow { font-size: .6rem; letter-spacing: .1em; }
-  .service-card { grid-template-columns: 1fr; }
-  .card-photo .photo { height: 240px; }
-  .commercial-art { min-height: 210px; padding: 1.5rem; }
   .gallery-grid, .comparison-grid { grid-template-columns: 1fr; }
   .comparison-grid .photo, .gallery-grid .photo { max-height: none; }
-  .form-grid { grid-template-columns: 1fr; }
-  .form-submit .button { width: 100%; }
   .quote-form { padding: 1.25rem; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-brand { grid-column: auto; }
 }
 @media (max-height: 500px) and (max-width: 900px) {
   .site-header { position: static; }
+  .site-nav.is-open { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem .75rem; }
+  .site-nav .button { margin-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }

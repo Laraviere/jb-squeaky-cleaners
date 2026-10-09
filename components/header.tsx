@@ -3,13 +3,26 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { business, navigation } from "@/lib/site";
 import { Icon } from "./icon";
 
 export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const menuToggle = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpen(false);
+      menuToggle.current?.focus();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
   return <>
     <div className="topbar"><div className="container topbar-inner"><span>{business.area}</span><a href={business.phoneHref}><Icon name="phone" />{business.phone}</a></div></div>
     <header className="site-header">
@@ -17,7 +30,7 @@ export function Header() {
         <Link href="/" className="logo-link" aria-label="JB Squeaky Cleaners home" onClick={() => setOpen(false)}>
           <Image src="/branding/jb-squeaky-header-logo.png" alt="JB Squeaky Cleaners LLC" width={1916} height={821} sizes="(max-width: 420px) 170px, (max-width: 900px) 180px, (max-width: 1100px) 200px, 220px" loading="eager" className="site-logo" />
         </Link>
-        <button className="menu-toggle" aria-controls="site-navigation" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button ref={menuToggle} className="menu-toggle" aria-controls="site-navigation" aria-expanded={open} onClick={() => setOpen(!open)}>
           <span>{open ? "Close" : "Menu"}</span><span className="menu-lines" aria-hidden="true">{open ? "×" : "☰"}</span>
         </button>
         <nav id="site-navigation" aria-label="Main navigation" className={`site-nav${open ? " is-open" : ""}`}>
