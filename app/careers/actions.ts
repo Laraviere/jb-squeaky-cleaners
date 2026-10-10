@@ -41,6 +41,9 @@ export async function submitApplication(
     };
   }
   const { draft, errors } = validateApplication(input);
+  if (form.get("privacy_acknowledged") !== "on")
+    errors.privacy_acknowledged =
+      "Please acknowledge the Applicant Privacy Notice.";
   if (Object.keys(errors).length)
     return {
       status: "error",

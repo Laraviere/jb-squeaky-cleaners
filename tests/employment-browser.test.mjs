@@ -265,6 +265,7 @@ async function review(page) {
   }
 }
 async function acknowledge(page) {
+  await page.locator("#application-privacy_acknowledged").check();
   await page.locator("#application-accepted").check();
   await control(page, "acknowledgment").fill(answers.full_name);
   const token = await page
@@ -351,6 +352,29 @@ test("Review does not submit early; acknowledgment exposes required semantics an
   await page.close();
 });
 
+test("privacy notice is repeated on Review and acknowledgment is required before saving", async () => {
+  const page = await context.newPage();
+  await review(page);
+  assert.equal(await page.getByRole("heading", { name: "Applicant Privacy Notice", exact: true }).count(), 2);
+  const checkbox = page.locator("#application-privacy_acknowledged");
+  assert.equal(await checkbox.evaluate((node) => node.required), true);
+  await acknowledge(page);
+  await checkbox.uncheck();
+  const before = saved.size;
+  await submit(page);
+  await page.locator("#application-privacy_acknowledged-error").waitFor();
+  assert.equal(saved.size, before);
+  assert.equal(await checkbox.getAttribute("aria-describedby"), "application-privacy_acknowledged-error");
+  assert.equal(await checkbox.evaluate((node) => document.activeElement === node), true);
+  await page.keyboard.press("Space");
+  assert.equal(await checkbox.isChecked(), true);
+  await submit(page);
+  await page.locator(".application-success").waitFor();
+  assert.equal(saved.size, before + 1);
+  assert.equal([...saved.values()].at(-1).payload.privacy_acknowledged, undefined);
+  await page.close();
+});
+
 test("future starts and equal times fail in the browser; overnight/past employment proceed", async () => {
   const page = await context.newPage();
   await fresh(page);
@@ -402,6 +426,7 @@ for (const afterSave of [false, true]) {
     await submit(page);
     await page.locator(".employment-form .form-message").waitFor();
     assert.ok(await page.locator(".employment-form").isVisible());
+    assert.equal(await page.locator("#application-privacy_acknowledged").isChecked(), true);
     assert.equal(await page.locator(".application-success").count(), 0);
     assert.equal(
       await page.locator("input[name=application_token]").inputValue(),

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { EmploymentApplication } from "@/components/employment-application";
+import { ApplicantPrivacyNotice } from "@/components/applicant-privacy-notice";
 import { PageIntro } from "@/components/sections";
 import {
   applicationAvailable,
@@ -79,6 +80,7 @@ export default async function Careers() {
               <h2>Your employment application.</h2>
             </div>
           </div>
+          <ApplicantPrivacyNotice />
           <EmploymentApplication
             available={available}
             token={available ? createApplicationToken() : ""}

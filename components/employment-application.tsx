@@ -17,6 +17,7 @@ import {
   type ApplicationState,
 } from "@/lib/employment";
 import { useEmploymentDraft } from "./use-employment-draft";
+import { ApplicantPrivacyNotice } from "./applicant-privacy-notice";
 import { business } from "@/lib/site";
 
 const initialState: ApplicationState = { status: "idle", message: "" };
@@ -33,6 +34,7 @@ export function EmploymentApplication({
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<ApplicationDraft>(emptyApplication);
   const [errors, setErrors] = useState<ApplicationErrors>({});
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [state, formAction, pending] = useActionState(
     safeSubmitApplication,
     initialState,
@@ -74,6 +76,7 @@ export function EmploymentApplication({
   const startFresh = () => {
     deviceDraft.startNew();
     setDraft(emptyApplication());
+    setPrivacyAcknowledged(false);
     setStep(0);
     setErrors({});
     stepChanged.current = true;
@@ -325,6 +328,9 @@ export function EmploymentApplication({
       action={formAction}
       noValidate
       className="employment-form"
+      // Answers and acknowledgments are controlled. Keep Action resets from
+      // clearing checkboxes after recoverable failures; Start New clears state.
+      onReset={(event) => event.preventDefault()}
       onSubmit={(event) => {
         if (step !== 7) {
           event.preventDefault();
@@ -337,6 +343,9 @@ export function EmploymentApplication({
           return;
         }
         const result = validateApplication(draft);
+        if (!privacyAcknowledged)
+          result.errors.privacy_acknowledged =
+            "Please acknowledge the Applicant Privacy Notice.";
         setErrors(result.errors);
         if (Object.keys(result.errors).length) {
           event.preventDefault();
@@ -571,6 +580,24 @@ export function EmploymentApplication({
                 )}
               </section>
             ))}
+            <ApplicantPrivacyNotice headingLevel={4} />
+            <label className="application-acknowledgment">
+              <input
+                id="application-privacy_acknowledged"
+                type="checkbox"
+                required
+                checked={privacyAcknowledged}
+                aria-invalid={!!allErrors.privacy_acknowledged}
+                aria-describedby={allErrors.privacy_acknowledged ? "application-privacy_acknowledged-error" : undefined}
+                onChange={(event) => setPrivacyAcknowledged(event.target.checked)}
+              />
+              I have read and understand the Applicant Privacy Notice. *
+            </label>
+            {allErrors.privacy_acknowledged && (
+              <p className="field-error" id="application-privacy_acknowledged-error">
+                {allErrors.privacy_acknowledged}
+              </p>
+            )}
             <div className="application-certification">
               <h4>Applicant certification</h4>
               <p>{certificationText}</p>
@@ -618,6 +645,7 @@ export function EmploymentApplication({
         )}
       </fieldset>
       <input type="hidden" name="application" value={JSON.stringify(draft)} />
+      <input type="hidden" name="privacy_acknowledged" value={privacyAcknowledged ? "on" : ""} />
       <input type="hidden" name="application_token" value={token} />
       <div className="honeypot" aria-hidden="true">
         <label htmlFor="application-website">Leave empty</label>

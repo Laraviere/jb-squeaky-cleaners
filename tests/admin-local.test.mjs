@@ -872,6 +872,7 @@ run(
       await page.getByRole("button", { name: "Next", exact: true }).click();
     }
     await control("accepted").check();
+    await control("privacy_acknowledged").check();
     await control("acknowledgment").fill(answers.full_name);
     await page.waitForTimeout(2100);
     await page

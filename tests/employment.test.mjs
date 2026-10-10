@@ -234,6 +234,7 @@ test("Server Action refuses unavailable, honeypot and invalid data; never report
   }).submitApplication;
   const form = new FormData();
   form.set("application_token", "test");
+  form.set("privacy_acknowledged", "on");
   form.set("application", JSON.stringify(valid()));
   assert.equal((await action({}, form)).status, "error");
   storage.applicationAvailable = async () => true;
@@ -245,6 +246,12 @@ test("Server Action refuses unavailable, honeypot and invalid data; never report
   form.set("application", JSON.stringify(valid()));
   assert.equal((await action({}, form)).status, "error");
   storage.saveApplication = async () => "11111111-1111-4111-8111-111111111111";
+  form.delete("privacy_acknowledged");
+  assert.equal((await action({}, form)).errors.privacy_acknowledged,
+    "Please acknowledge the Applicant Privacy Notice.");
+  form.set("privacy_acknowledged", "false");
+  assert.equal((await action({}, form)).status, "error");
+  form.set("privacy_acknowledged", "on");
   assert.equal((await action({}, form)).status, "success");
 });
 
