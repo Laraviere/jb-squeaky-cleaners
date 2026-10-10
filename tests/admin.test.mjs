@@ -88,6 +88,30 @@ test("SSR configuration refuses privileged credentials and insecure hosted URLs"
 const redirect = (location) => {
   throw new Error("REDIRECT " + location);
 };
+test("admin configuration waits for request cookies and fails closed when runtime configuration is missing", async () => {
+  let requestAvailable = false, configurationReads = 0, clientCreations = 0;
+  const requestOnly = load("lib/admin/server.ts", {
+    "server-only": {},
+    "@supabase/ssr": { createServerClient: () => { clientCreations++; } },
+    "next/headers": {
+      cookies: async () => {
+        if (!requestAvailable) throw new Error("PRERENDER_INTERRUPTED");
+        return { getAll: () => [], set: () => {} };
+      },
+    },
+    "next/navigation": { redirect },
+    "./config": {
+      adminConfiguration: () => { configurationReads++; return null; },
+      adminCookieOptions: {},
+    },
+  });
+  await assert.rejects(requestOnly.adminClient(), /PRERENDER_INTERRUPTED/);
+  assert.equal(configurationReads, 0);
+  requestAvailable = true;
+  await assert.rejects(requestOnly.requireAdmin(), /Admin authentication is not configured/);
+  assert.equal(configurationReads, 1);
+  assert.equal(clientCreations, 0);
+});
 let user = { id: "synthetic" },
   identity = { role: "administrator", status: "active" },
   aal = "aal2",

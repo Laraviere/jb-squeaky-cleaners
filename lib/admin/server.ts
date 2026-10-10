@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { adminConfiguration, adminCookieOptions } from "./config";
 
 export async function adminClient() {
+  // Reach the request-time API before checking environment configuration.
+  // Otherwise missing credentials can throw while Next.js prerenders a route.
+  const store = await cookies();
   const config = adminConfiguration();
   if (!config) throw new Error("Admin authentication is not configured.");
-  const store = await cookies();
   return createServerClient(config.url, config.key, {
     cookieOptions: adminCookieOptions,
     cookies: {
