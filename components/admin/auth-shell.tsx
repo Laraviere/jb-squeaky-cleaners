@@ -20,10 +20,12 @@ export function AuthShell({
         />
         <p className="admin-eyebrow">Private staff portal</p>
         <h1>{title}</h1>
-        {children}
-        <Link href="/" className="admin-back-link">
-          Back to public website
-        </Link>
+        <div className="admin-auth-content">{children}</div>
+        <div className="admin-auth-footer">
+          <Link href="/" className="admin-back-link">
+            Back to public website
+          </Link>
+        </div>
       </div>
     </main>
   );

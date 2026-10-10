@@ -96,6 +96,35 @@
   border-radius: 16px;
   min-width: 0;
 }
+.admin-auth-content {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin-top: 1.25rem;
+  overflow-wrap: anywhere;
+}
+.admin-auth-card p {
+  margin: 0;
+  line-height: 1.6;
+}
+.admin-auth-content .admin-button {
+  width: 100%;
+}
+.admin-auth-content .admin-text-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.admin-auth-footer {
+  border-top: 1px solid #dce5eb;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
 .admin-auth-logo {
   width: 240px;
   max-width: 100%;
@@ -111,11 +140,14 @@
   color: #006e9b !important;
 }
 .admin-back-link {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
-  margin-top: 0.7rem;
+  text-align: center;
+  font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.5;
 }
 .admin-text-button {
   background: none;
