@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   },
   description: `Locally owned and insured. ${serviceAreas.description} One-time and recurring plans. Request a quote.`,
   applicationName: "JB Squeaky Cleaners",
+  appleWebApp: {
+    capable: true,
+    title: "JB Squeaky Cleaners",
+    statusBarStyle: "default",
+  },
   icons: {
     apple: {
       url: "/branding/apple-touch-icon.png",
