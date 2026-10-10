@@ -2,7 +2,7 @@
 import { useActionState, useState, useTransition } from "react";
 import Image from "next/image";
 import { mfaQrImageSource } from "@/lib/admin/mfa";
-import { enrollMfa, login, setPassword, verifyMfa } from "@/app/admin/actions";
+import { enrollMfa, login, setPassword, verifyMfa, verifyRecoveryMfa, requestRecovery } from "@/app/admin/actions";
 export function LoginForm() {
   const [state, action, pending] = useActionState(login, {});
   return (
@@ -78,10 +78,12 @@ export function PasswordForm() {
 }
 export function MfaForm({
   factors,
+  recovery = false,
 }: {
   factors: { id: string; friendly_name?: string }[];
+  recovery?: boolean;
 }) {
-  const [state, action, pending] = useActionState(verifyMfa, {});
+  const [state, action, pending] = useActionState(recovery ? verifyRecoveryMfa : verifyMfa, {});
   const [enrollment, setEnrollment] = useState<
     Awaited<ReturnType<typeof enrollMfa>>
   >({});
@@ -177,4 +179,14 @@ export function MfaForm({
       )}
     </div>
   );
+}
+
+export function RecoveryForm() {
+  const [state, action, pending] = useActionState(requestRecovery, {});
+  return <form action={action} className="admin-form">
+    <label>Email<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
+    {state.error && <p role="alert" className="admin-error">{state.error}</p>}
+    {state.success && <p role="status">{state.success}</p>}
+    <button className="admin-button" disabled={pending}>{pending ? "Requesting…" : "Send password reset email"}</button>
+  </form>;
 }

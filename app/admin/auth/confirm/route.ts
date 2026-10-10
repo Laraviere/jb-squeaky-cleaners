@@ -1,3 +1,4 @@
+import { beginRecovery, recoverySession } from "@/lib/admin/recovery";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   adminClient,
@@ -25,11 +26,18 @@ export async function GET(request: NextRequest) {
         user &&
         !membership.error &&
         eligibleStaff(membership.data as StaffIdentity | null)
-      )
+      ) {
+        const session = await recoverySession(client);
+        if (session.userId !== user.id) {
+          await client.auth.signOut({ scope: "local" });
+          return new NextResponse(null, { status: 303, headers: { Location: "/admin/login?reason=invite" } });
+        }
+        await beginRecovery(user.id, session.sessionId, "invite");
         return new NextResponse(null, {
           status: 303,
           headers: { Location: "/admin/setup" },
         });
+      }
       await client.auth.signOut({ scope: "local" });
     }
   }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AuthShell } from "@/components/admin/auth-shell";
 import { LoginForm } from "@/components/admin/auth-forms";
 import { adminConfiguration } from "@/lib/admin/config";
@@ -13,7 +14,8 @@ export default async function LoginPage({
         Access is by invitation only. An active staff membership and
         authenticator verification are required.
       </p>
-      {reason && (
+      {reason === "password-saved" && <p role="status">Password saved. Sign in with your new password, then verify your authenticator.</p>}
+      {reason && reason !== "password-saved" && (
         <p role="alert" className="admin-error">
           {reason === "invite"
             ? "This invitation could not be verified. Contact your administrator."
@@ -27,6 +29,7 @@ export default async function LoginPage({
           Admin authentication is not configured. Contact your administrator.
         </p>
       )}
+      <Link href="/admin/forgot-password" className="admin-text-button">Forgot Password?</Link>
     </AuthShell>
   );
 }

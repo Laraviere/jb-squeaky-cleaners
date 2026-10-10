@@ -85,6 +85,11 @@ test("SSR configuration refuses privileged credentials and insecure hosted URLs"
     process.env = saved;
   }
 });
+const recoveryMocks = {
+  recoverySession: async () => ({ userId: "synthetic", sessionId: "test-session", recovery: false }),
+  hasRecovery: async () => false,
+  clearRecovery: async () => {},
+};
 const redirect = (location) => {
   throw new Error("REDIRECT " + location);
 };
@@ -92,6 +97,7 @@ test("admin configuration waits for request cookies and fails closed when runtim
   let requestAvailable = false, configurationReads = 0, clientCreations = 0;
   const requestOnly = load("lib/admin/server.ts", {
     "server-only": {},
+    "./recovery": recoveryMocks,
     "@supabase/ssr": { createServerClient: () => { clientCreations++; } },
     "next/headers": {
       cookies: async () => {
@@ -134,6 +140,7 @@ const client = {
 };
 const server = load("lib/admin/server.ts", {
   "server-only": {},
+  "./recovery": recoveryMocks,
   "@supabase/ssr": { createServerClient: () => client },
   "next/headers": {
     cookies: async () => ({ getAll: () => [], set: () => {} }),
@@ -188,6 +195,8 @@ test("management actions validate inputs and never accept an actor from the call
     },
   };
   const actions = load("app/admin/actions.ts", {
+    "next/headers": {},
+    "@/lib/admin/recovery": recoveryMocks,
     "next/navigation": { redirect },
     "next/cache": { revalidatePath: () => {} },
     "@/lib/admin/server": {

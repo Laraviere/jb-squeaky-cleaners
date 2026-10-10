@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { adminConfiguration, adminCookieOptions } from "./config";
+import { recoverySession, hasRecovery } from "./recovery";
 
 export async function adminClient() {
   // Reach the request-time API before checking environment configuration.
@@ -50,10 +51,17 @@ export function eligibleStaff(identity: StaffIdentity | null) {
     ["administrator", "manager"].includes(identity.role)
   );
 }
-export async function requireStaffEnrollment() {
+export async function requireStaffEnrollment(allowPasswordSetup = false) {
   const session = await staffSession();
   if (!session.user) redirect("/admin/login");
   if (!eligibleStaff(session.identity)) redirect("/admin/login?reason=access");
+  const verified = await recoverySession(session.client);
+  if (verified.userId !== session.user.id) redirect("/admin/login?reason=access");
+  if (verified.recovery) {
+    if (!allowPasswordSetup) redirect("/admin/setup");
+    if (!(await hasRecovery(verified.userId, verified.sessionId)))
+      redirect("/admin/forgot-password?reason=recovery");
+  }
   return session;
 }
 export async function requireAdmin(permission = "dashboard.read") {

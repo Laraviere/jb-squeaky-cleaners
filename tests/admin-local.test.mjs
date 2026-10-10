@@ -1072,3 +1072,82 @@ run(
     await invalidContext.close();
   },
 );
+run("recovery callback verifies real local tokens, enforces setup, denies nonstaff/suspended and preserves MFA", async () => {
+  assert.equal(url, "http://127.0.0.1:54321");
+  for (const role of ["administrator", "manager", "customer", "suspended"]) {
+    const email = `synthetic-recovery-${role}-${randomUUID().slice(0, 8)}@example.com`;
+    const created = await privileged.auth.admin.createUser({ email, email_confirm: true });
+    assert.ok(!created.error && created.data.user, "Local synthetic recovery identity created");
+    if (role !== "customer") sql(`with inserted as (insert into public.staff_memberships(user_id,role,status) values('${created.data.user.id}','${role === "manager" ? "manager" : "administrator"}','${role === "suspended" ? "suspended" : "active"}') returning user_id) select to_json(count(*)) from inserted`);
+    const generated = await privileged.auth.admin.generateLink({ type: "recovery", email });
+    assert.ok(!generated.error, "Local recovery link generated");
+    const token = generated.data.properties.hashed_token;
+    privilegedSecrets.push(token);
+    const context = await newContext(), page = await context.newPage();
+    await page.goto(`${base}/admin/auth/recovery?token_hash=${encodeURIComponent(token)}&type=recovery`);
+    if (["administrator", "manager"].includes(role)) {
+      assert.ok(page.url().endsWith('/admin/setup'), "Eligible recovery redirects to setup");
+      for (const destination of ['/admin', '/admin/mfa', '/admin/quotes', '/admin/applications']) {
+        await page.goto(base + destination);
+        assert.ok(page.url().endsWith('/admin/setup'), "Recovery cannot bypass password setup");
+      }
+      const recoveryState = (await context.cookies()).find(c => c.name === 'jb-admin-recovery');
+      assert.ok(recoveryState?.httpOnly && recoveryState.path === '/admin' && recoveryState.sameSite === 'Lax', 'Recovery state has restricted cookie attributes');
+      const password = randomBytes(24).toString('base64url');
+      await page.getByLabel('New password', { exact: true }).fill(password);
+      await page.getByLabel('Confirm password', { exact: true }).fill(password);
+      await page.getByRole('button', { name: 'Save password', exact: true }).click();
+      await page.waitForURL('**/admin/login?reason=password-saved');
+      await page.getByLabel('Email', { exact: true }).fill(email);
+      await page.getByLabel('Password', { exact: true }).fill(password);
+      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+      await page.waitForURL('**/admin/mfa');
+      assert.ok(await page.getByRole('button', { name: 'Set up authenticator' }).isVisible(), 'MFA enrollment remains mandatory after password login');
+    } else {
+      assert.ok(page.url().includes('/admin/forgot-password?reason=recovery'), 'Ineligible recovery denied');
+      assert.ok(!(await context.cookies()).some(c => c.name === 'jb-admin-recovery' && c.value), 'No recovery authorization cookie issued');
+    }
+    const replay = await context.request.get(`${base}/admin/auth/recovery?token_hash=${encodeURIComponent(token)}&type=recovery`, { maxRedirects: 0 });
+    assert.equal(replay.headers().location, '/admin/forgot-password?reason=recovery', 'Consumed token cannot be reused');
+    if (role === 'administrator') {
+      const expired = await privileged.auth.admin.generateLink({ type: 'recovery', email });
+      assert.ok(!expired.error, 'Synthetic local expiry fixture generated');
+      privilegedSecrets.push(expired.data.properties.hashed_token);
+      sql(`with changed as (update auth.users set recovery_sent_at=now()-interval '2 days' where id='${created.data.user.id}' returning id) select to_json(count(*)) from changed`);
+      const denied = await context.request.get(`${base}/admin/auth/recovery?token_hash=${encodeURIComponent(expired.data.properties.hashed_token)}&type=recovery`, { maxRedirects: 0 });
+      assert.equal(denied.headers().location, '/admin/forgot-password?reason=recovery', 'Actually expired local recovery token is denied');
+      const invalid = await context.request.get(`${base}/admin/auth/recovery?token_hash=synthetic-invalid&type=recovery`, { maxRedirects: 0 });
+      assert.equal(invalid.headers().location, '/admin/forgot-password?reason=recovery', 'Invalid token is denied');
+    }
+    await context.close();
+  }
+});
+run("MFA-enrolled staff must verify an existing factor before password recovery and again after fresh login", async () => {
+  const owner = users.administrator;
+  const link = await privileged.auth.admin.generateLink({ type: 'recovery', email: owner.email });
+  assert.ok(!link.error, 'Local synthetic recovery generated');
+  privilegedSecrets.push(link.data.properties.hashed_token);
+  const context = await newContext(), page = await context.newPage();
+  await page.goto(`${base}/admin/auth/recovery?token_hash=${encodeURIComponent(link.data.properties.hashed_token)}&type=recovery`);
+  await page.getByRole('heading', { name: 'Verify your existing authenticator' }).waitFor();
+  await page.getByLabel('Six-digit code').fill(totp(owner.secret));
+  await page.getByRole('button', { name: 'Verify and continue' }).click();
+  await page.getByRole('heading', { name: 'Set your staff password' }).waitFor();
+  await page.goto(base + '/admin/quotes');
+  assert.ok(page.url().endsWith('/admin/setup'), 'AAL2 recovery still cannot bypass password setup');
+  const password = randomBytes(24).toString('base64url');
+  await page.getByLabel('New password', { exact: true }).fill(password);
+  await page.getByLabel('Confirm password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Save password' }).click();
+  await page.waitForURL('**/admin/login?reason=password-saved');
+  await page.getByLabel('Email', { exact: true }).fill(owner.email);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.waitForURL('**/admin/mfa');
+  await context.close();
+});
+
+run("recovery credentials and tokens are absent from production-server logs", () => {
+  for (const secret of privilegedSecrets)
+    assert.ok(!serverLog.includes(secret), "Sensitive values must not appear in logs");
+});

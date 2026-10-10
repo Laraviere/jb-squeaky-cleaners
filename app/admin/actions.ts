@@ -1,4 +1,6 @@
 "use server";
+import { headers } from "next/headers";
+import { allowRecoveryRequest, recoveryOrigin, recoverySession, recoveryPurpose, clearRecovery } from "@/lib/admin/recovery";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
@@ -37,6 +39,7 @@ export async function login(
 export async function signOut() {
   const client = await adminClient();
   await client.auth.signOut({ scope: "local" });
+  await clearRecovery();
   redirect("/admin/login");
 }
 export async function enrollMfa(): Promise<{
@@ -89,11 +92,27 @@ export async function verifyMfa(
     };
   redirect("/admin");
 }
+export async function verifyRecoveryMfa(_state: ActionState, form: FormData): Promise<ActionState> {
+  const { client } = await requireStaffEnrollment(true);
+  const session = await recoverySession(client);
+  if (!session.recovery || !(await recoveryPurpose(session.userId, session.sessionId)))
+    return { error: "Request a new recovery link to continue." };
+  const factorId = String(form.get("factorId") || ""), code = String(form.get("code") || "").trim();
+  const factors = await client.auth.mfa.listFactors();
+  if (!validId(factorId) || !/^\d{6}$/.test(code) || factors.error ||
+      !factors.data.totp.some(f => f.id === factorId && f.status === "verified"))
+    return { error: "Use your existing verified authenticator." };
+  const result = await client.auth.mfa.challengeAndVerify({ factorId, code });
+  if (result.error) return { error: "That code could not be verified. Try a current code." };
+  redirect("/admin/setup");
+}
 export async function setPassword(
   _state: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { client } = await requireStaffEnrollment();
+  const { client, user } = await requireStaffEnrollment(true);
+  const session = await recoverySession(client);
+  const purpose = await recoveryPurpose(session.userId, session.sessionId);
   const password = String(form.get("password") || "");
   if (
     password.length < 12 ||
@@ -104,7 +123,35 @@ export async function setPassword(
   const result = await client.auth.updateUser({ password });
   if (result.error)
     return { error: "Unable to save your password. Please try again." };
+  if (session.recovery && purpose === "invite" && user?.email) {
+    // Legacy Auth uses otp for invitations too. Establish a password-authenticated
+    // session after invite setup, preserving the existing direct MFA transition.
+    const signedIn = await client.auth.signInWithPassword({ email: user.email, password });
+    if (signedIn.error) return { error: "Password saved. Sign in with your new password to continue." };
+    await clearRecovery();
+    redirect("/admin/mfa");
+  }
+  if (session.recovery) {
+    await client.auth.signOut({ scope: "local" });
+    await clearRecovery();
+    redirect("/admin/login?reason=password-saved");
+  }
   redirect("/admin/mfa");
+}
+export async function requestRecovery(_state: ActionState, form: FormData): Promise<ActionState> {
+  const response = { success: "If this account is eligible, a password reset email will arrive shortly. Check your inbox and spam folder." };
+  const email = String(form.get("email") || "").trim();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return { error: "Enter a valid email address." };
+  try {
+    const requestHeaders = await headers();
+    const source = requestHeaders.get("x-vercel-forwarded-for") || requestHeaders.get("x-forwarded-for") || "unknown";
+    if (allowRecoveryRequest(email, source)) {
+      const client = await adminClient();
+      await client.auth.resetPasswordForEmail(email, { redirectTo: `${recoveryOrigin()}/admin/auth/recovery` });
+    }
+  } catch { /* Same response for unavailable, rate-limited and unknown accounts. */ }
+  return response;
 }
 export async function manageRecord(
   _state: ActionState,
