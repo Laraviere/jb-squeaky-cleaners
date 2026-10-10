@@ -509,3 +509,13 @@
   gap: 0.45rem;
   min-width: 0;
 }
+
+.admin-record-tabs, .admin-record-buttons { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+.admin-record-tabs a { padding: .7rem 1rem; min-height: 44px; border-radius: 7px; border: 1px solid #b6c4ce; }
+.admin-record-tabs a[aria-current="page"] { background: var(--navy); color: white; }
+.admin-record-buttons > button { flex: 1 1 10rem; }
+.admin-button-secondary { background: #fff; border-color: #b6c4ce; }
+.admin-button-danger { background: #a11830; border-color: #a11830; color: white; }
+.admin-record-controls { margin-top: 1.25rem; }
+.admin-confirm-dialog { width: min(34rem, calc(100% - 2rem)); max-height: calc(100svh - 2rem); overflow: auto; margin: auto; padding: clamp(1rem, 4vw, 2rem); border: 1px solid #b6c4ce; border-radius: 12px; background: white; color: var(--ink); overflow-wrap: anywhere; }
+.admin-confirm-dialog::backdrop { background: rgb(6 20 38 / 65%); }

@@ -1011,6 +1011,85 @@ run(
     assert.ok(anonymous.headers.get("x-robots-tag")?.includes("noindex"));
   },
 );
+run("browser Trash confirmations, restore, legal holds and permanent deletion work responsively for both record kinds", async () => {
+  const context = await newContext(), page = await context.newPage();
+  await signIn(page, "administrator");
+  for (const kind of ["quotes", "applications"]) {
+    const tag=randomUUID();
+    let id;
+    if (kind === "quotes") {
+      const saved = await privileged.from("quote_requests").insert({name:"Synthetic Trash Browser",phone:"2765550144",email:`trash-${tag}@example.com`,service_type:"Residential",location:"Galax, VA",frequency:"One-time",property_size:"Synthetic size",preferred_timing:"Flexible",details:"Synthetic disposable Trash QA fixture"}).select("id").single();
+      assert.ok(!saved.error); id=saved.data.id;
+    } else {
+      const payload=employment.applicationPayload(employment.validateApplication({answers:{...answers,full_name:"Synthetic Trash Browser",email:`trash-${tag}@example.com`},employers:[],references,accepted:true,acknowledgment:"Synthetic Trash Browser"}).draft);
+      const saved=await privileged.rpc("submit_employment_application",{p_submission_id:randomUUID(),p_payload:payload,p_digest:createHash("sha256").update(JSON.stringify(payload)).digest("hex"),p_bucket:createHash("sha256").update(tag).digest("hex")});
+      assert.ok(!saved.error); id=saved.data;
+    }
+    const status=kind === "quotes" ? "quote_sent" : "interview";
+    assert.ok(!(await clients.administrator.rpc("admin_set_status",{record_kind:kind,record_id:id,next_status:status})).error);
+    assert.ok(!(await clients.administrator.rpc("admin_add_note",{record_kind:kind,record_id:id,note_body:"Synthetic preservation note"})).error);
+    const before=await clients.administrator.rpc("admin_dashboard"); assert.ok(!before.error);
+    await page.goto(`${base}/admin/${kind}/${id}`);
+    for (const width of [320,375,390,430,768,1024,1440]) {
+      await page.setViewportSize({width,height:800});
+      await page.getByRole("button",{name:"Delete record",exact:true}).click();
+      const dialog=page.getByRole("dialog"); await dialog.waitFor();
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `No page overflow at ${width}`);
+      assert.ok(await dialog.evaluate(n=>n.scrollWidth<=n.clientWidth),`No dialog overflow at ${width}`);
+      await page.keyboard.press("Escape"); assert.equal(await dialog.isVisible(),false);
+      assert.ok(await page.getByRole("button",{name:"Delete record",exact:true}).evaluate(n=>n===document.activeElement));
+    }
+    await page.getByRole("button",{name:"Delete record",exact:true}).click();
+    await page.getByRole("dialog").getByRole("button",{name:"Move to Trash",exact:true}).click();
+    await page.waitForURL(`${base}/admin/${kind}/trash`);
+    const after=await clients.administrator.rpc("admin_dashboard"); assert.equal(after.data[kind],before.data[kind]-1);
+    await page.getByRole("searchbox").fill(`trash-${tag}@example.com`);
+    await page.locator("#filter-status").selectOption(status);
+    await page.getByRole("button",{name:"Apply filters"}).click();
+    await page.getByRole("link",{name:"Synthetic Trash Browser",exact:true}).click();
+    await page.getByText("Synthetic preservation note",{exact:true}).waitFor();
+    await page.getByText("Moved to Trash",{exact:true}).waitFor();
+    await page.getByRole("button",{name:"Restore record",exact:true}).click();
+    await page.getByRole("dialog").getByRole("button",{name:"Restore record",exact:true}).click();
+    await page.waitForURL(`${base}/admin/${kind}/${id}`);
+    await page.getByText("Synthetic preservation note",{exact:true}).waitFor();
+    assert.equal(await page.locator("#workflow-status").inputValue(),status);
+    const restored=await clients.administrator.rpc("admin_dashboard"); assert.equal(restored.data[kind],before.data[kind]);
+    await page.getByRole("button",{name:"Place legal hold",exact:true}).click();
+    await page.getByRole("dialog").getByRole("button",{name:"Place legal hold",exact:true}).click();
+    await page.getByRole("button",{name:"Release legal hold",exact:true}).waitFor();
+    await page.getByRole("button",{name:"Delete record",exact:true}).click();
+    await page.getByRole("dialog").getByRole("button",{name:"Move to Trash",exact:true}).click();
+    await page.waitForURL(`${base}/admin/${kind}/trash`);
+    await page.goto(`${base}/admin/${kind}/trash/${id}`);
+    assert.equal(await page.getByRole("button",{name:"Permanently delete",exact:true}).isDisabled(),true);
+    await page.getByRole("button",{name:"Release legal hold",exact:true}).click();
+    await page.getByRole("dialog").getByRole("button",{name:"Release legal hold",exact:true}).click();
+    await page.getByRole("button",{name:"Place legal hold",exact:true}).waitFor();
+    await page.getByRole("button",{name:"Permanently delete",exact:true}).click();
+    const dialog=page.getByRole("dialog");
+    await dialog.getByLabel("Type PERMANENTLY DELETE to confirm").fill("delete");
+    await dialog.getByRole("button",{name:"Permanently delete",exact:true}).click();
+    assert.equal(await dialog.isVisible(),true);
+    await dialog.getByLabel("Type PERMANENTLY DELETE to confirm").fill("PERMANENTLY DELETE");
+    await dialog.getByRole("button",{name:"Permanently delete",exact:true}).click();
+    await page.waitForURL(`${base}/admin/${kind}/trash`);
+    await page.getByText(`Record ID: ${id}`,{exact:true}).waitFor();
+    const receipt=await clients.administrator.from("record_deletion_receipts").select("record_id").eq("record_id",id);
+    assert.equal(receipt.data.length,1);
+    await page.goto(`${base}/admin/${kind}/trash/${id}`); await page.getByText("404",{exact:true}).waitFor();
+  }
+  await context.close();
+  const managerContext=await newContext(), managerPage=await managerContext.newPage();
+  await signIn(managerPage,"manager");
+  await managerPage.goto(`${base}/admin/quotes/${records.quotes}`);
+  assert.equal(await managerPage.getByRole("button",{name:"Delete record",exact:true}).count(),0);
+  for (const kind of ["quotes","applications"]) {
+    await managerPage.goto(`${base}/admin/${kind}/trash`); assert.ok(managerPage.url().includes("/admin/login?reason=access"));
+  }
+  await managerContext.close();
+});
+
 run(
   "local invitation redemption requires membership and allows password setup before MFA",
   async () => {

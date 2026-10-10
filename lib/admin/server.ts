@@ -76,3 +76,10 @@ export async function requireAdmin(permission = "dashboard.read") {
     redirect("/admin/login?reason=access");
   return session;
 }
+
+export async function requireRecordAdministrator(permission: string) {
+  const session = await requireAdmin(permission);
+  if (session.identity?.role !== "administrator")
+    redirect("/admin/login?reason=access");
+  return session;
+}

@@ -1,6 +1,6 @@
 import "server-only";
 import { notFound } from "next/navigation";
-import { requireAdmin } from "./server";
+import { requireAdmin, requireRecordAdministrator } from "./server";
 import { type RecordKind, validId, validStatus } from "./workflow";
 export type ListRow = {
   id: string;
@@ -9,6 +9,9 @@ export type ListRow = {
   submitted_at: string;
   service_type: string;
   workflow_status: string;
+  deleted_at?: string;
+  deleted_by?: string;
+  legal_hold?: boolean;
 };
 export type HistoryRow = {
   id: string;
@@ -39,8 +42,9 @@ export type ListParams = {
   sort?: string | string[];
   page?: string | string[];
 };
-export async function listRecords(kind: RecordKind, params: ListParams) {
-  const { client } = await requireAdmin(`${kind}.read`);
+export async function listRecords(kind: RecordKind, params: ListParams, trash = false) {
+  const session = trash ? await requireRecordAdministrator(`${kind}.trash`) : await requireAdmin(`${kind}.read`);
+  const { client } = session;
   const q = (typeof params.q === "string" ? params.q : "").slice(0, 200),
     status = validStatus(kind, params.status) ? params.status : "",
     sort = params.sort === "oldest" ? "oldest" : "newest";
@@ -51,7 +55,7 @@ export async function listRecords(kind: RecordKind, params: ListParams) {
       parseInt(typeof params.page === "string" ? params.page : "1", 10) || 1,
     ),
   );
-  const { data, error } = await client.rpc("admin_list_records", {
+  const { data, error } = await client.rpc(trash ? "admin_list_trash" : "admin_list_records", {
     record_kind: kind,
     search_text: q,
     status_filter: status,
@@ -59,24 +63,36 @@ export async function listRecords(kind: RecordKind, params: ListParams) {
     page_number: page,
   });
   if (error) throw new Error("Unable to load records.");
+  const receipts = trash ? await client.from("record_deletion_receipts")
+    .select("record_id,actor_id,deleted_at,retain_until,legal_hold")
+    .eq("record_kind", kind).order("deleted_at", { ascending: false }).limit(20) : null;
+  if (receipts?.error) throw new Error("Unable to load deletion history.");
   return {
     ...(data as { rows: ListRow[]; total: number }),
     q,
     status,
     sort,
     page,
+    administrator: session.identity?.role === "administrator",
+    trash,
+    receipts: (receipts?.data ?? []) as { record_id: string; actor_id: string; deleted_at: string; retain_until: string; legal_hold: boolean }[],
   };
 }
-export async function recordDetail(kind: RecordKind, id: string) {
+export async function recordDetail(kind: RecordKind, id: string, trash = false) {
   if (!validId(id)) notFound();
-  const { client } = await requireAdmin(`${kind}.read`);
+  const session = trash ? await requireRecordAdministrator(`${kind}.trash`) : await requireAdmin(`${kind}.read`);
+  const { client } = session;
   const record = await client
-    .from(kind === "quotes" ? "admin_quotes" : "admin_applications")
+    .from(trash ? (kind === "quotes" ? "admin_trash_quotes" : "admin_trash_applications") : (kind === "quotes" ? "admin_quotes" : "admin_applications"))
     .select("*")
     .eq("id", id)
     .maybeSingle();
   if (record.error) throw new Error("Unable to load this record.");
   if (!record.data) notFound();
+  const lifecycle = session.identity?.role === "administrator" ? await client
+    .from("record_lifecycle").select("legal_hold,deleted_at,deleted_by")
+    .eq("record_kind", kind).eq("record_id", id).maybeSingle() : null;
+  if (lifecycle?.error) throw new Error("Unable to load record protection.");
   const column = kind === "quotes" ? "quote_id" : "application_id";
   const [notes, history] = await Promise.all([
     client
@@ -98,6 +114,8 @@ export async function recordDetail(kind: RecordKind, id: string) {
     record: record.data as RecordData,
     notes: notes.data as NoteRow[],
     history: history.data as HistoryRow[],
+    administrator: session.identity?.role === "administrator",
+    lifecycle: lifecycle?.data as { legal_hold: boolean; deleted_at: string | null; deleted_by: string | null } | null,
   };
 }
 export async function dashboardData() {

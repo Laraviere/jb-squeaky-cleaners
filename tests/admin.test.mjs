@@ -280,3 +280,44 @@ test("list requests use permission checks and bounded typed search/filter/pagina
   assert.equal(requests.at(-1).args.status_filter, "won");
   assert.equal(requests.at(-1).args.oldest_first, true);
 });
+
+test("trash operations enforce administrator role independently of permission grants", async () => {
+  user = { id: "synthetic" }; aal = "aal2"; allowed = true;
+  for (const role of ["manager", "employee"]) {
+    identity = { role, status: "active" };
+    await assert.rejects(server.requireRecordAdministrator("quotes.delete"), /reason=access/);
+  }
+  identity = { role: "administrator", status: "active" };
+  assert.ok((await server.requireRecordAdministrator("quotes.delete")).user);
+  aal = "aal1";
+  await assert.rejects(server.requireRecordAdministrator("quotes.delete"), /\/admin\/mfa/);
+  aal = "aal2";
+});
+
+test("lifecycle actions validate one UUID and explicit confirmation, never accepting an actor or hold state", async () => {
+  const calls = [];
+  const action = load("app/admin/actions.ts", {
+    "next/headers": {}, "@/lib/admin/recovery": recoveryMocks,
+    "next/navigation": { redirect }, "next/cache": { revalidatePath: () => {} },
+    "@/lib/admin/server": { requireRecordAdministrator: async (permission) => {
+      assert.match(permission, /^(quotes|applications)\.(delete|purge|hold)$/);
+      return { client: { rpc: async (name, args) => { calls.push({ name, args }); return {error:null}; } } };
+    } }, "@/lib/admin/workflow": workflow,
+  }).changeRecordLifecycle;
+  for (const kind of ["quotes", "applications"]) {
+    for (const [operation, confirmation] of Object.entries(workflow.lifecycleConfirmations)) {
+      const form = new FormData();
+      Object.entries({kind, id:"12121212-1212-4212-8212-121212121212", operation, actor_id:"forged", legal_hold:"false"}).forEach(([k,v]) => form.set(k,v));
+      const before=calls.length;
+      assert.ok((await action({},form)).error);
+      assert.equal(calls.length,before);
+      form.set("confirmation",confirmation);
+      if (["delete","restore","purge"].includes(operation)) await assert.rejects(action({},form), /REDIRECT/);
+      else assert.ok((await action({},form)).success);
+      assert.deepEqual(Object.keys(calls.at(-1).args).sort(),["confirmation","operation","record_id","record_kind"]);
+      assert.equal(calls.at(-1).name,"admin_record_lifecycle");
+    }
+  }
+  const bad=new FormData(); bad.set("kind","quotes"); bad.set("operation","purge"); bad.set("id","[bulk]");
+  assert.ok((await action({},bad)).error);
+});

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { dashboardData, formatDate } from "@/lib/admin/data";
-import { statusLabel } from "@/lib/admin/workflow";
+import { historyLabel } from "@/lib/admin/workflow";
 export default async function DashboardPage() {
   const data = await dashboardData();
   const cards = [
@@ -58,9 +58,7 @@ export default async function DashboardPage() {
                     href={`/admin/${a.quote_id ? "quotes" : "applications"}/${a.quote_id || a.application_id}`}
                   >
                     {a.quote_id ? "Quote" : "Application"} ·{" "}
-                    {a.action === "note_added"
-                      ? "Internal note added"
-                      : `Status changed to ${statusLabel(a.new_status || "new")}`}
+                    {historyLabel(a.action, a.old_status, a.new_status)}
                   </Link>
                   <time dateTime={a.created_at}>
                     {formatDate(a.created_at)}

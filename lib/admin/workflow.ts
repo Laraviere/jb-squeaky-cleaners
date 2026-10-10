@@ -16,6 +16,30 @@ export const applicationStatuses = [
   "archived",
 ] as const;
 export type RecordKind = "quotes" | "applications";
+export const lifecycleConfirmations = {
+  delete: "MOVE TO TRASH",
+  restore: "RESTORE",
+  purge: "PERMANENTLY DELETE",
+  hold: "PLACE HOLD",
+  release_hold: "RELEASE HOLD",
+} as const;
+export type LifecycleOperation = keyof typeof lifecycleConfirmations;
+export function isLifecycleOperation(value: unknown): value is LifecycleOperation {
+  return typeof value === "string" && Object.hasOwn(lifecycleConfirmations, value);
+}
+export function lifecyclePermission(operation: LifecycleOperation) {
+  return operation === "purge" ? "purge" : operation === "hold" || operation === "release_hold" ? "hold" : "delete";
+}
+export function historyLabel(action: string, oldStatus?: string | null, newStatus?: string | null) {
+  switch (action) {
+    case "note_added": return "Internal note added";
+    case "deleted": return "Moved to Trash";
+    case "restored": return "Restored from Trash";
+    case "hold_set": return "Legal hold placed";
+    case "hold_released": return "Legal hold released";
+    default: return `${statusLabel(oldStatus || "new")} → ${statusLabel(newStatus || "new")}`;
+  }
+}
 export function statuses(kind: RecordKind) {
   return kind === "quotes" ? quoteStatuses : applicationStatuses;
 }

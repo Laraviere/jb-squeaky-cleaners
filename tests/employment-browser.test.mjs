@@ -365,6 +365,8 @@ test("privacy notice is repeated on Review and acknowledgment is required before
   await page.locator("#application-privacy_acknowledged-error").waitFor();
   assert.equal(saved.size, before);
   assert.equal(await checkbox.getAttribute("aria-describedby"), "application-privacy_acknowledged-error");
+  // Error focus is scheduled on the next animation frame, not the error render.
+  await page.waitForFunction(() => document.activeElement?.id === "application-privacy_acknowledged");
   assert.equal(await checkbox.evaluate((node) => document.activeElement === node), true);
   await page.keyboard.press("Space");
   assert.equal(await checkbox.isChecked(), true);

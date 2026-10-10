@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { recordDetail, formatDate } from "@/lib/admin/data";
-import { type RecordKind, statusLabel } from "@/lib/admin/workflow";
+import { type RecordKind, statusLabel, historyLabel } from "@/lib/admin/workflow";
 import {
   applicationSteps,
   employerFields,
@@ -8,6 +8,7 @@ import {
   type ApplicationField,
 } from "@/lib/employment";
 import { WorkflowControls } from "./workflow-controls";
+import { LifecycleControls } from "./lifecycle-controls";
 function displayValue(value: unknown): React.ReactNode {
   if (value === null || value === undefined || value === "")
     return "Not provided";
@@ -41,11 +42,13 @@ function Fields({
 export async function RecordDetail({
   kind,
   id,
+  trash = false,
 }: {
   kind: RecordKind;
   id: string;
+  trash?: boolean;
 }) {
-  const { record, notes, history } = await recordDetail(kind, id);
+  const { record, notes, history, administrator, lifecycle } = await recordDetail(kind, id, trash);
   const submitted = String(record.created_at || record.submitted_at);
   const labels = Object.fromEntries(
     [
@@ -56,8 +59,8 @@ export async function RecordDetail({
   );
   return (
     <>
-      <Link className="admin-back-link" href={`/admin/${kind}`}>
-        ← Back to {kind === "quotes" ? "quote requests" : "applications"}
+      <Link className="admin-back-link" href={`/admin/${kind}${trash ? "/trash" : ""}`}>
+        ← Back to {trash ? "Trash" : kind === "quotes" ? "quote requests" : "applications"}
       </Link>
       <header className="admin-page-header">
         <p className="admin-eyebrow">Original submission · Read only</p>
@@ -70,6 +73,7 @@ export async function RecordDetail({
         <span className="admin-status">
           {statusLabel(record.workflow_status)}
         </span>
+        {trash && lifecycle?.deleted_at && <p>Moved to Trash {formatDate(lifecycle.deleted_at)} · Staff ID: {lifecycle.deleted_by}</p>}
       </header>
       <div className="admin-detail-grid">
         <div className="admin-submission">
@@ -151,11 +155,12 @@ export async function RecordDetail({
           )}
         </div>
         <div>
-          <WorkflowControls
+          {!trash && <WorkflowControls
             kind={kind}
             id={id}
             status={record.workflow_status}
-          />
+          />}
+          {administrator && <LifecycleControls kind={kind} id={id} trash={trash} legalHold={lifecycle?.legal_hold ?? false} />}
           <section className="admin-panel">
             <h2>Internal notes</h2>
             {notes.length ? (
@@ -182,9 +187,7 @@ export async function RecordDetail({
                 {history.map((h) => (
                   <li key={h.id}>
                     <strong>
-                      {h.action === "note_added"
-                        ? "Internal note added"
-                        : `${statusLabel(h.old_status || "new")} → ${statusLabel(h.new_status || "new")}`}
+                      {historyLabel(h.action, h.old_status, h.new_status)}
                     </strong>
                     <time dateTime={h.created_at}>
                       {formatDate(h.created_at)}

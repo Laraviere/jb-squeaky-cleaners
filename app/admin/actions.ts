@@ -7,6 +7,7 @@ import {
   adminClient,
   eligibleStaff,
   requireAdmin,
+  requireRecordAdministrator,
   requireStaffEnrollment,
   staffSession,
 } from "@/lib/admin/server";
@@ -15,6 +16,9 @@ import {
   validId,
   validNote,
   validStatus,
+  isLifecycleOperation,
+  lifecyclePermission,
+  lifecycleConfirmations,
 } from "@/lib/admin/workflow";
 export type ActionState = { error?: string; success?: string };
 export async function login(
@@ -190,4 +194,25 @@ export async function manageRecord(
   revalidatePath(`/admin/${kind}`);
   revalidatePath("/admin");
   return { success: operation === "status" ? "Status saved." : "Note saved." };
+}
+
+export async function changeRecordLifecycle(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const kind = form.get("kind"), id = form.get("id"), operation = form.get("operation");
+  if (!isRecordKind(kind) || !validId(id) || !isLifecycleOperation(operation))
+    return { error: "Invalid action." };
+  const { client } = await requireRecordAdministrator(`${kind}.${lifecyclePermission(operation)}`);
+  if (form.get("confirmation") !== lifecycleConfirmations[operation])
+    return { error: "Confirm this action before continuing." };
+  const result = await client.rpc("admin_record_lifecycle", {
+    record_kind: kind, record_id: id, operation,
+    confirmation: lifecycleConfirmations[operation],
+  });
+  if (result.error) return { error: "The change was not confirmed. A legal hold prevents permanent deletion. Refresh the record before retrying." };
+  revalidatePath("/admin", "layout");
+  if (operation === "purge" || operation === "delete") redirect(`/admin/${kind}/trash`);
+  if (operation === "restore") redirect(`/admin/${kind}/${id}`);
+  return { success: operation === "hold" ? "Legal hold placed." : "Legal hold released." };
 }
